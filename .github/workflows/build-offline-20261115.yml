@@ -1,0 +1,249 @@
+name: Compile Ko'zlarini Tiysinlar offline APK
+on:
+  push:
+    branches: [apk-offline-build-20261115]
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Android SDK packages
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Prepare exact website and Android sources
+        shell: bash
+        run: |
+          mkdir -p "$(dirname 'settings.gradle')" 
+          cat > 'settings.gradle' <<'__APK0__'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = 'KozlariniTiysinlarOffline'
+          include ':app'
+          __APK0__
+          mkdir -p "$(dirname 'build.gradle')" 
+          cat > 'build.gradle' <<'__APK1__'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          __APK1__
+          mkdir -p "$(dirname 'gradle.properties')" 
+          cat > 'gradle.properties' <<'__APK2__'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          __APK2__
+          mkdir -p "$(dirname 'app/build.gradle')" 
+          cat > 'app/build.gradle' <<'__APK3__'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'uz.kozlarinitiysinlar.offline'
+              compileSdk 35
+              defaultConfig {
+                  applicationId 'uz.kozlarinitiysinlar.offline'
+                  minSdk 23
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0-offline'
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          __APK3__
+          mkdir -p "$(dirname 'app/src/main/AndroidManifest.xml')" 
+          cat > 'app/src/main/AndroidManifest.xml' <<'__APK4__'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:allowBackup="false"
+                  android:usesCleartextTraffic="false"
+                  android:label="Ko'zlarini tiysinlar!"
+                  android:icon="@drawable/app_icon"
+                  android:theme="@style/AppTheme" android:supportsRtl="true">
+                  <activity android:name=".MainActivity" android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          __APK4__
+          mkdir -p "$(dirname 'app/src/main/res/values/styles.xml')" 
+          cat > 'app/src/main/res/values/styles.xml' <<'__APK5__'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:windowBackground">#070707</item>
+                  <item name="android:statusBarColor">#070707</item>
+                  <item name="android:navigationBarColor">#070707</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowActionModeOverlay">true</item>
+              </style>
+          </resources>
+          __APK5__
+          mkdir -p "$(dirname 'app/src/main/java/uz/kozlarinitiysinlar/offline/MainActivity.java')" 
+          cat > 'app/src/main/java/uz/kozlarinitiysinlar/offline/MainActivity.java' <<'__APK6__'
+          package uz.kozlarinitiysinlar.offline;
+          
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.view.KeyEvent;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebResourceResponse;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import java.io.InputStream;
+          import java.io.IOException;
+          import java.net.URLConnection;
+          import java.util.Collections;
+          
+          public final class MainActivity extends Activity {
+              private static final String LOCAL_HOST = "appassets.androidplatform.net";
+              private static final String ROOT = "https://" + LOCAL_HOST + "/";
+              private WebView webView;
+          
+              @Override public void onCreate(Bundle savedState) {
+                  super.onCreate(savedState);
+                  getWindow().setStatusBarColor(Color.rgb(7, 7, 7));
+                  getWindow().setNavigationBarColor(Color.rgb(7, 7, 7));
+                  webView = new WebView(this);
+                  webView.setBackgroundColor(Color.rgb(7, 7, 7));
+                  webView.setVerticalScrollBarEnabled(false);
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(false);
+                  settings.setAllowContentAccess(false);
+                  settings.setSupportZoom(false);
+                  settings.setBuiltInZoomControls(false);
+                  settings.setDefaultTextEncodingName("UTF-8");
+                  webView.setWebChromeClient(new WebChromeClient());
+                  webView.setWebViewClient(new LocalAssetsClient());
+                  setContentView(webView);
+                  if (savedState == null) webView.loadUrl(ROOT + "index.html");
+                  else webView.restoreState(savedState);
+              }
+          
+              private final class LocalAssetsClient extends WebViewClient {
+                  @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                      Uri uri = request.getUrl();
+                      if (!"https".equals(uri.getScheme()) || !LOCAL_HOST.equals(uri.getHost()))
+                          return super.shouldInterceptRequest(view, request);
+                      String path = uri.getPath();
+                      if (path == null || "/".equals(path)) path = "/index.html";
+                      if (path.contains("..")) return null;
+                      String name = path.startsWith("/") ? path.substring(1) : path;
+                      try {
+                          InputStream stream = getAssets().open("site/" + name);
+                          String mime = URLConnection.guessContentTypeFromName(name);
+                          if (name.endsWith(".webmanifest")) mime = "application/manifest+json";
+                          else if (name.endsWith(".woff2")) mime = "font/woff2";
+                          else if (name.endsWith(".woff")) mime = "font/woff";
+                          else if (name.endsWith(".ttf")) mime = "font/ttf";
+                          else if (name.endsWith(".css")) mime = "text/css";
+                          else if (name.endsWith(".js")) mime = "application/javascript";
+                          else if (name.endsWith(".html")) mime = "text/html";
+                          if (mime == null) mime = "application/octet-stream";
+                          boolean binary = mime.startsWith("image/") || mime.startsWith("font/") || mime.equals("application/octet-stream");
+                          return new WebResourceResponse(mime, binary ? null : "UTF-8", 200, "OK",
+                              Collections.singletonMap("Access-Control-Allow-Origin", "*"), stream);
+                      } catch (IOException ex) {
+                          return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found",
+                              Collections.emptyMap(), new java.io.ByteArrayInputStream(new byte[0]));
+                      }
+                  }
+                  @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                      Uri uri = request.getUrl();
+                      if ("https".equals(uri.getScheme()) && LOCAL_HOST.equals(uri.getHost())) return false;
+                      if (request.isForMainFrame()) {
+                          try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) { }
+                          return true;
+                      }
+                      return false;
+                  }
+              }
+          
+              @Override protected void onSaveInstanceState(Bundle outState) {
+                  webView.saveState(outState);
+                  super.onSaveInstanceState(outState);
+              }
+              @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+                  if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
+                      webView.goBack();
+                      return true;
+                  }
+                  return super.onKeyDown(keyCode, event);
+              }
+              @Override protected void onDestroy() {
+                  if (webView != null) webView.destroy();
+                  super.onDestroy();
+              }
+          }
+          __APK6__
+          python3 - <<'__APKPY__'
+          import os,re,hashlib,time,urllib.request
+          base="https://raw.githubusercontent.com/a1devel0per477-spec/Kozlarini_tiysinlar/4078c7a3bdf7c93fb618e1de2dd3f35f25244878/"
+          dest="app/src/main/assets/site"
+          os.makedirs(dest,exist_ok=True)
+          def get(url):
+              for attempt in range(5):
+                  try:
+                      req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"})
+                      with urllib.request.urlopen(req,timeout=45) as response: return response.read()
+                  except Exception:
+                      if attempt == 4: raise
+                      time.sleep(attempt+2)
+          for name in ["index.html","manifest.webmanifest","sw.js","favicon.png","apple-touch-icon.png","icon-192.png","icon-512.png","icon-maskable-512.png"]:
+              data=get(base+name)
+              with open(os.path.join(dest,name),"wb") as f:f.write(data)
+          print("Downloaded website source, all images and manifest")
+          css_url="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&family=Amiri:wght@400;700&display=swap"
+          css=get(css_url).decode("utf-8")
+          for url in set(re.findall(r'url\\((https://fonts\\.gstatic\\.com/[^)]+)\\)',css)):
+              ext=".woff2" if ".woff2" in url else (".woff" if ".woff" in url else ".ttf")
+              rel="fonts/"+hashlib.sha256(url.encode()).hexdigest()[:20]+ext
+              os.makedirs(os.path.join(dest,"fonts"),exist_ok=True)
+              with open(os.path.join(dest,rel),"wb") as f:f.write(get(url))
+              css=css.replace(url,rel)
+          with open(os.path.join(dest,"fonts.css"),"w",encoding="utf-8") as f:f.write(css)
+          with open(os.path.join(dest,"index.html"),"r",encoding="utf-8") as f:html=f.read()
+          html=html.replace('<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&family=Amiri:wght@400;700&display=swap" rel="stylesheet">','<link href="fonts.css" rel="stylesheet">')
+          html=html.replace('<link rel="preconnect" href="https://fonts.googleapis.com">','')
+          html=html.replace('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>','')
+          html=html.replace("if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));","")
+          with open(os.path.join(dest,"index.html"),"w",encoding="utf-8") as f:f.write(html)
+          os.makedirs("app/src/main/res/drawable-nodpi",exist_ok=True)
+          with open("app/src/main/res/drawable-nodpi/app_icon.png","wb") as f:f.write(get(base+"icon-512.png"))
+          print("Bundled offline website files; HTML bytes:",len(html.encode("utf-8")))
+          __APKPY__
+      - name: Build APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kozlarini-Tiysinlar-Offline-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

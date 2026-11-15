@@ -54,11 +54,11 @@ jobs:
               namespace 'uz.kozlarinitiysinlar.offline'
               compileSdk 35
               defaultConfig {
-                  applicationId 'uz.kozlarinitiysinlar.offline'
+                  applicationId 'uz.kozlarinitiysinlar.offline.v2'
                   minSdk 23
                   targetSdk 34
-                  versionCode 1
-                  versionName '1.0-offline'
+                  versionCode 2
+                  versionName '1.1-offline'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -146,8 +146,7 @@ jobs:
                   webView.setWebChromeClient(new WebChromeClient());
                   webView.setWebViewClient(new LocalAssetsClient());
                   setContentView(webView);
-                  if (savedState == null) webView.loadUrl(ROOT + "index.html");
-                  else webView.restoreState(savedState);
+                  webView.loadUrl(ROOT + "index.html");
               }
           
               private final class LocalAssetsClient extends WebViewClient {
@@ -242,6 +241,11 @@ jobs:
           with open("app/src/main/res/drawable-nodpi/app_icon.png","wb") as f:f.write(get(base+"icon-512.png"))
           print("Bundled offline website files; HTML bytes:",len(html.encode("utf-8")))
           __APKPY__
+      - name: Restore original cover and smooth day wheel
+        run: |
+          test -s offline-assets/index.html
+          cp offline-assets/index.html app/src/main/assets/site/index.html
+          grep -q 'function settleWheel' app/src/main/assets/site/index.html
       - name: Build APK
         run: gradle --no-daemon --stacktrace :app:assembleDebug
       - uses: actions/upload-artifact@v4

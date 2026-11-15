@@ -1,0 +1,7 @@
+@Sites uchun topshiriq
+
+Mavjud boshqa shaxsga tegishli GitHub repositoryni o‘zgartirma va unga push qilma. O‘zimizning mustaqil “Ko‘zlarini tiysinlar!” statik PWA ilovamizni ishlab chiqayapmiz. Ushbu ZIP dagi index.html, styles.css, app.js, sw.js, manifest.webmanifest va ikonalarni loyiha sifatida ishlat.
+
+Vizual yo‘nalish: mavjud to‘q qora/bordo ranglar ruhiyati, yumaloq kartalar, sokin va didli tipografika, mobilga ustuvor UX. Asosiy sahifada “Aqlli reja” bloki: so‘nggi va kelayotgan vazifa uchun doira, ularning orasida progress chiziq, real vaqtda yangilanadigan qolgan vaqt, yaqinlashganda urg‘u animatsiyasi. Reja qo‘shish: vaqt, ikki marta takrorlash, hafta kunlari, sana, izoh, 0–60 daqiqa oldin eslatma. Bajarilgan vazifalar va hisobotlar mavjud.
+
+Xabarlarni sun’iy ravishda fon rejimida doimiy ishlayotgandek ko‘rsatma. GitHub Pages PWA ning sahifa yopilgandagi cheklovini ochiq ayt. Original loyihadan mualliflik huquqi bilan himoyalangan kod va rasmlarni ruxsatsiz ko‘chirma. Yangi fayllarni o‘z repositorymizga yoki yangi @Sites loyihamizga joylashtir.
